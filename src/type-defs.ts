@@ -2,7 +2,7 @@ import { gql } from "apollo-server";
 
 export default gql`
   type Income {
-    SSN: String!
+    Ssn: String!
     PersonalTaxDiscount: Int
     MonthIncome: Int
     OtherMonthIncome: Int
@@ -10,7 +10,7 @@ export default gql`
   }
 
   type EstimatedChildBirth {
-    ParentSSN: String!
+    ParentSsn: String!
     EstimatedBirthDate: String!
   }
 
@@ -85,8 +85,12 @@ export default gql`
   }
 
   type Query {
-    children: [Children],
-    individuals: [Individuals],
+    proxyChildren: [Children],
+    proxyIndividuals: [Individuals],
+    proxyIncomes: [Income],
+    proxyEstimatedBirthDates: [EstimatedChildBirth],
+    individualsFullInfo: [CombinedData]
+    findParentWithHighestIncome(birthMonth: String!): CombinedData
     infoBySSN(SSN: String!): CombinedData
     findRichestParent: CombinedData
     findAll: [CombinedData]

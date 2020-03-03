@@ -1,11 +1,10 @@
 import { filter, find, maxBy } from "lodash";
 import { config } from "./config/configuredValues";
-import { json } from "express";
+const request = require("request");
 
 const EstimatedChildBirths = require("./data/EstimatedChildBirths");
 const Incomes = require("./data/Incomes");
 const NationalRegistry = require("./data/National_registry");
-const request = require("request");
 
 type Period = {
   LeavePercentage: number;
@@ -47,6 +46,36 @@ function findAll(obj: any, args: any, context: any) {
   });
 }
 
+// accumulate 3 different sources into one
+const getIndividualsFullInfo = async () => {
+  const individuals: any = await getIndividualsFromAPI();
+  const incomes: any = await getIncomesFromAPI();
+  const estimatedChildBirth: any = await getEstimatedBirthDatesFromAPI();
+  return individuals.map(reg => {
+    let SSN = reg.Ssn;
+    let info = {
+      Income: find(incomes, obj => obj.Ssn === SSN),
+      EstimatedChildBirth: find(
+        estimatedChildBirth,
+        obj => obj.ParentSsn === SSN
+      )
+    };
+    return {
+      SSN: SSN,
+      Name: reg.Name,
+      Address: reg.Address,
+      HasIncomes: !!info.Income,
+      MonthIncome: !info.Income ? 0 : +info.Income.MonthIncome,
+      OtherMonthIncome: !info.Income ? 0 : +info.Income.OtherMonthIncome,
+      PensionSavings: !info.Income ? 0 : +info.Income.PensionSavings,
+      PersonalDiscount: !info.Income ? 0 : +info.Income.PersonalTaxDiscount,
+      ChildEstimateBirthDate: !info.EstimatedChildBirth
+        ? null
+        : info.EstimatedChildBirth.EstimatedBirthDate
+    };
+  });
+};
+
 const getChildrenFromAPI = async () => {
   return new Promise((resolve, reject) => {
     request(
@@ -73,10 +102,63 @@ const getIndividualsFromAPI = async () => {
   });
 };
 
+const getIncomesFromAPI = async () => {
+  return new Promise((resolve, reject) => {
+    request(
+      `http://localhost:4002/api/incomes`,
+      { json: true },
+      (error, response) => {
+        if (error) throw new Error(error);
+        resolve(response.body);
+      }
+    );
+  });
+};
+
+const getEstimatedBirthDatesFromAPI = async () => {
+  return new Promise((resolve, reject) => {
+    request(
+      `http://localhost:4002/api/estimatedBirthDates`,
+      { json: true },
+      (error, response) => {
+        if (error) throw new Error(error);
+        resolve(response.body);
+      }
+    );
+  });
+};
+
 export default {
   Query: {
-    children: async () => await getChildrenFromAPI(),
-    individuals: async () => await getIndividualsFromAPI(),
+    // simpe proxy query for National registry API - children list (example file Þjóðskrá Börn.csv)
+    proxyChildren: async () => await getChildrenFromAPI(),
+    // simpe proxy query for National registry - individuals list (example file Þjóðskrá Einstaklingar.csv)
+    proxyIndividuals: async () => await getIndividualsFromAPI(),
+    // simpe proxy query for Directorate of labor API - maternity leave incomes (example file Vinnumálastofnun Fæðingaorlof tekjur.csv)
+    proxyIncomes: async () => await getIncomesFromAPI(),
+    // simpe proxy query for Directorate of labor API - estimated birth date (example file Vinnumálastofnun Fæðingaorlof tekjur.csv)
+    proxyEstimatedBirthDates: async () => await getEstimatedBirthDatesFromAPI(),
+    // aggregate query for individuals
+    individualsFullInfo: async () => await getIndividualsFullInfo(),
+    // query for getting parent with the highest monthly income, who has children and has a scheduled birth date in May 2020
+    findParentWithHighestIncome: async (
+      obj: any,
+      args: { birthMonth: string },
+      context: any
+    ) => {
+      // getting aggregate information about individuals
+      const result = await getIndividualsFullInfo();
+      // filter with requested birth date pattern
+      let filteredByBirthPattern = filter(result, function(elem) {
+        return elem.ChildEstimateBirthDate.includes(args.birthMonth);
+      });
+      console.log(filteredByBirthPattern);
+      // find maximum income (based on MonthIncome + OtherMonthIncome)
+      return maxBy(filteredByBirthPattern, function(elem) {
+        return elem.MonthIncome + elem.OtherMonthIncome;
+      });
+    },
+
     registries: () => NationalRegistry,
     infoBySSN: (obj: any, args: { SSN: String }, context: any) => {
       let info = {
