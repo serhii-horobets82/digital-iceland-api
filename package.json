@@ -1,0 +1,31 @@
+{
+  "name": "graphQL-Apollo-TS",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "webpack --config webpack.development.js",
+    "start": "node dist/server",
+    "start:env": "node --require dotenv/config dist/server"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/lodash": "^4.14.149",
+    "@types/webpack-env": "^1.15.1",
+    "clean-webpack-plugin": "^3.0.0",
+    "dotenv": "^8.2.0",
+    "ts-loader": "^6.2.1",
+    "typescript": "^3.7.5",
+    "webpack": "^4.41.6",
+    "webpack-cli": "^3.3.11",
+    "webpack-merge": "^4.2.2",
+    "webpack-node-externals": "^1.7.2"
+  },
+  "dependencies": {
+    "apollo-server": "^2.10.1",
+    "graphql": "^14.6.0",
+    "lodash": "latest",
+    "request": "^2.88.2"
+  }
+}
