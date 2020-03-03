@@ -24,10 +24,10 @@ export default gql`
 
   type Individuals {
     Name: String!
-    SSN: String!
+    Ssn: String!
     Address: String
     Spouse: String
-    SpouseSSN: String
+    SpouseSsn: String
   }
 
   type Children {

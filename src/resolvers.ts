@@ -48,7 +48,6 @@ function findAll(obj: any, args: any, context: any) {
 }
 
 const getChildrenFromAPI = async () => {
-  console.log("getIndividualsFromAPI");
   return new Promise((resolve, reject) => {
     request(
       `http://localhost:4001/api/children`,
@@ -62,10 +61,9 @@ const getChildrenFromAPI = async () => {
 };
 
 const getIndividualsFromAPI = async () => {
-  console.log("getIndividualsFromAPI");
   return new Promise((resolve, reject) => {
     request(
-      `http://localhost:4001/api/children`,
+      `http://localhost:4001/api/individuals`,
       { json: true },
       (error, response) => {
         if (error) throw new Error(error);
