@@ -46,14 +46,16 @@ function findAll(obj: any, args: any, context: any) {
   });
 }
 
-// accumulate 3 different sources into one
+// accumulate 4 different sources into one
 const getIndividualsFullInfo = async () => {
   const individuals: any = await getIndividualsFromAPI();
   const incomes: any = await getIncomesFromAPI();
+  const children: any = await getChildrenFromAPI();
   const estimatedChildBirth: any = await getEstimatedBirthDatesFromAPI();
   return individuals.map(reg => {
     let SSN = reg.Ssn;
     let info = {
+      Children: find(children, item => item.ParentSSN === SSN),
       Income: find(incomes, obj => obj.Ssn === SSN),
       EstimatedChildBirth: find(
         estimatedChildBirth,
@@ -64,6 +66,7 @@ const getIndividualsFullInfo = async () => {
       SSN: SSN,
       Name: reg.Name,
       Address: reg.Address,
+      HasChildren: !!info.Children,
       HasIncomes: !!info.Income,
       MonthIncome: !info.Income ? 0 : +info.Income.MonthIncome,
       OtherMonthIncome: !info.Income ? 0 : +info.Income.OtherMonthIncome,
@@ -130,13 +133,13 @@ const getEstimatedBirthDatesFromAPI = async () => {
 
 export default {
   Query: {
-    // simpe proxy query for National registry API - children list (example file Þjóðskrá Börn.csv)
+    // simple proxy query for National registry API - children list (example file Þjóðskrá Börn.csv)
     proxyChildren: async () => await getChildrenFromAPI(),
-    // simpe proxy query for National registry - individuals list (example file Þjóðskrá Einstaklingar.csv)
+    // simple proxy query for National registry - individuals list (example file Þjóðskrá Einstaklingar.csv)
     proxyIndividuals: async () => await getIndividualsFromAPI(),
-    // simpe proxy query for Directorate of labor API - maternity leave incomes (example file Vinnumálastofnun Fæðingaorlof tekjur.csv)
+    // simple proxy query for Directorate of labor API - maternity leave incomes (example file Vinnumálastofnun Fæðingaorlof tekjur.csv)
     proxyIncomes: async () => await getIncomesFromAPI(),
-    // simpe proxy query for Directorate of labor API - estimated birth date (example file Vinnumálastofnun Fæðingaorlof tekjur.csv)
+    // simple proxy query for Directorate of labor API - estimated birth date (example file Vinnumálastofnun Fæðingaorlof tekjur.csv)
     proxyEstimatedBirthDates: async () => await getEstimatedBirthDatesFromAPI(),
     // aggregate query for individuals
     individualsFullInfo: async () => await getIndividualsFullInfo(),
@@ -148,11 +151,13 @@ export default {
     ) => {
       // getting aggregate information about individuals
       const result = await getIndividualsFullInfo();
-      // filter with requested birth date pattern
-      let filteredByBirthPattern = filter(result, function(elem) {
-        return elem.ChildEstimateBirthDate.includes(args.birthMonth);
+      // filter with requested birth date pattern and hasChild condition
+      let filteredByBirthPattern = filter(result, elem => {
+        return (
+          elem.ChildEstimateBirthDate.includes(args.birthMonth) &&
+          elem.HasChildren
+        );
       });
-      console.log(filteredByBirthPattern);
       // find maximum income (based on MonthIncome + OtherMonthIncome)
       return maxBy(filteredByBirthPattern, function(elem) {
         return elem.MonthIncome + elem.OtherMonthIncome;

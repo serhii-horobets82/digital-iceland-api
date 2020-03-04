@@ -42,6 +42,7 @@ export default gql`
     Name: String!
     Address: String
     HasIncomes: Boolean
+    HasChildren: Boolean
     MonthIncome: Int
     OtherMonthIncome: Int
     PensionSavings: Int
