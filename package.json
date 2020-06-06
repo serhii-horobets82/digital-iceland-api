@@ -23,7 +23,7 @@
     "webpack-node-externals": "^1.7.2"
   },
   "dependencies": {
-    "apollo-server": "^2.10.1",
+    "apollo-server": "^2.14.2",
     "graphql": "^14.6.0",
     "lodash": "latest",
     "request": "^2.88.2"
